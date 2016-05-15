@@ -1,5 +1,20 @@
 # -*- coding: utf-8 -*-
 
+'''
+FAQ GENERATOR
+Jeff Thompson | 2016 | www.jeffreythompson.org
+
+A bot that generates randomized FAQs.
+
+Grabs a random Wikipedia article, extracts instances
+of "<thing> is/are/was/were <info about the thing>" and
+turns it into a question.
+
+TO DO:
+- still issues with quotation marks
+
+'''
+
 import wikipedia, re, os, glob, twitter
 from collections import Counter
 from pattern.en import pluralize, singularize, tag
@@ -18,6 +33,9 @@ max_tries = 		  5				# total # of tries before bailing
 
 testing = 			  False			# run testing mode?
 test_thing = 		  'death'		# preset thing to test with
+debug = 			  True
+
+__location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
 
 def run():
@@ -42,7 +60,7 @@ def run():
 		thing = choice(articles)
 	else:
 		print 'selecting random noun...'
-		with open('../WordLists/SingularNouns.txt') as f:
+		with open(os.path.join(__location__, 'SingularNouns.txt')) as f:
 			singular_nouns = f.readlines()
 		thing = choice(singular_nouns)
 	thing = thing.strip()
@@ -293,7 +311,7 @@ def run():
 	</html>'''
 
 	# save html to file and upload to server
-	with open(html_file, 'w') as f:
+	with open(os.path.join(__location__, html_file), 'w') as f:
 		f.write(html.encode('utf8'))
 
 	print 'uploading to server...'
@@ -304,9 +322,9 @@ def run():
 	ftp = FTP(ftp_address)
 	ftp.login(username, password)
 	ftp.cwd(directory)
-	ftp.storlines('STOR ' + html_file, open(html_file))
+	ftp.storlines('STOR ' + html_file, open(os.path.join(__location__, html_file)))
 	ftp.quit()
-	os.rename(html_file, 'faqs/' + html_file)
+	os.rename(os.path.join(__location__, html_file), os.path.join(__location__, 'faqs', html_file))
 	print '- done!'
 
 	# post new FAQ to Twitter
@@ -337,8 +355,9 @@ tries = 0
 while not success:
 	try:
 		success = run()
-	except:
-		# something went wrong :(
+	except Exception, e:
+		if debug:
+			print str(e)
 		pass
 	
 	print '\n' + ('- ' * 8) + '\n'
